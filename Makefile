@@ -33,7 +33,7 @@ TOP:=${PWD}
 
 OBJ_DIR:=$(TOP)/obj
 
-.PHONY: libewx 
+PHONY: libewx doc
 #  standard common Makefile fragment
 all: $(OBJ_DIR) libewx 
 
@@ -53,6 +53,9 @@ libewx: ${OBJ_DIR}/libewx.a
 	@cp *.h $^ lib_ewx
 	@tar -czvf libewx.tgz lib_ewx 2>& 1 > /dev/null
 	@rm -rf lib_ewx
+
+doc:
+	doxygen docs.conf
 
 clean:
 	rm -f $(CLEAN_LIST) libewx.tgz
