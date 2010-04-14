@@ -33,7 +33,7 @@ TOP:=${PWD}
 
 OBJ_DIR:=$(TOP)/obj
 
-PHONY: libewx doc
+.PHONY: doc libewx
 #  standard common Makefile fragment
 all: $(OBJ_DIR) libewx 
 
