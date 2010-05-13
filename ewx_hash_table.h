@@ -146,7 +146,7 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
  * 
  * @return 0，插入成功；否则，插入失败
  */
-int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, int32_t hash, void *free_pos_p, ewx_hash_table_compare_handle_t compare, 
+int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p, ewx_hash_table_compare_handle_t compare, 
 							  void *this, void *user_data, ewx_hash_table_insert_handle_t insert, 
 							  ewx_hash_table_bucket_alloc_handle_t bucket_alloc);
 
@@ -163,7 +163,7 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, int32_t hash, void
  * 
  * @return 0，插入成功；否则，插入失败；
  */
-int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, int32_t hash, ewx_hash_table_compare_handle_t compare, void *this,
+int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_hash_table_compare_handle_t compare, void *this,
 							  void *user_data, ewx_hash_table_remove_handle_t remove, ewx_hash_table_bucket_free_handle_t bucket_free);
 
 /** 
