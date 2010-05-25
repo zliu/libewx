@@ -28,7 +28,7 @@ ewx_hash_table_t *ewx_hash_table_init(char *name, int bucket_num, int bucket_siz
 	if (ptr == NULL) {
 		return NULL;
 	}
-	memset(ptr, 0, sizeof(bucket_num*bucket_size + sizeof(ewx_hash_table_t)));
+	memset(ptr, 0, bucket_num*bucket_size + sizeof(ewx_hash_table_t));
 
 	strcpy(ptr->name, name);
 
