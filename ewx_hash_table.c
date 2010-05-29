@@ -36,7 +36,7 @@ ewx_hash_table_t *ewx_hash_table_init(char *name, int bucket_num, int bucket_siz
 	ptr->bucket_size = bucket_size;
 	ptr->item_size = item_size;
 	ptr->item_num = (bucket_size - sizeof(ewx_bucket_hd_t))/item_size;
-	ptr->base_ptr = ptr + sizeof(ewx_hash_table_t);
+	ptr->base_ptr = (void *)ptr + sizeof(ewx_hash_table_t);
 
 	if (auto_lock) {
 		char lock_name[30];
