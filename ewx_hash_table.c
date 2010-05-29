@@ -24,11 +24,11 @@ ewx_hash_table_t *ewx_hash_table_init(char *name, int bucket_num, int bucket_siz
 		return NULL;
 	}
 
-	ewx_hash_table_t *ptr = cvmx_bootmem_alloc_named(bucket_num*bucket_size + sizeof(ewx_hash_table_t), 128, name);
+	ewx_hash_table_t *ptr = cvmx_bootmem_alloc_named((uint64_t)(bucket_num) * bucket_size + sizeof(ewx_hash_table_t), 128, name);
 	if (ptr == NULL) {
 		return NULL;
 	}
-	memset(ptr, 0, bucket_num*bucket_size + sizeof(ewx_hash_table_t));
+	memset(ptr, 0, (uint64_t)bucket_num * bucket_size + sizeof(ewx_hash_table_t));
 
 	strcpy(ptr->name, name);
 
@@ -42,7 +42,7 @@ ewx_hash_table_t *ewx_hash_table_init(char *name, int bucket_num, int bucket_siz
 		char lock_name[30];
 		strcpy(lock_name, name);
 		strcat(lock_name, LOCK_SUFFIX);
-		ptr->lock = cvmx_bootmem_alloc_named(sizeof(cvmx_spinlock_t) * bucket_num, 128, lock_name);
+		ptr->lock = cvmx_bootmem_alloc_named(sizeof(cvmx_spinlock_t) * (uint64_t)bucket_num, 128, lock_name);
 		if (ptr->lock == NULL) {
 			/*释放hash表空间，返回NULL*/
 			cvmx_bootmem_free_named(name);
@@ -73,7 +73,7 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
 		cvmx_spinlock_lock(&hash_table_p->lock[hash]);
 	}
 	/*开始搜索*/
-	current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + hash_table_p->bucket_size * hash);
+	current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + (uint64_t)(hash_table_p->bucket_size) * hash);
 	do {
 		if (current->next_offset != 0) {
 			next = (ewx_bucket_hd_t *)cvmx_phys_to_ptr(((uint64_t)current->next_offset) << 7);
@@ -118,7 +118,7 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 		cvmx_spinlock_lock(&hash_table_p->lock[hash]);
 	}
 
-	current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + hash_table_p->bucket_size * hash);
+	current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + (uint64_t)(hash_table_p->bucket_size) * hash);
 	pre = current;
 	if (free_pos_p == NULL) {
 		do {
@@ -151,7 +151,7 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 				i = current->valid_count;
 				current->valid_count++;
 //				printf("insert on bucket %d,current %p, valid_count %d\n", hash, current, current->valid_count);
-				free_pos_p = (void *)(current + 1) + i * hash_table_p->item_size;
+				free_pos_p = (void *)(current + 1) + (uint64_t)i * hash_table_p->item_size;
 				break;
 			}
 			pre = current;
@@ -216,7 +216,7 @@ int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx
 		cvmx_spinlock_lock(&hash_table_p->lock[hash]);
 	}
 	
-	current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + hash_table_p->bucket_size * hash);
+	current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + (uint64_t)(hash_table_p->bucket_size) * hash);
 	block_head = current;
 	pre = pre_last_block = current;
 
@@ -286,8 +286,8 @@ int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx
 
 	if ( (remove_block != last_block) || (remove_entry != last_entry)) {
 		void *src, *dst;
-		dst = (void *)(remove_block +1) + remove_entry * hash_table_p->item_size;
-		src = (void *)(last_block+1) + last_entry * hash_table_p->item_size;
+		dst = (void *)(remove_block +1) + (uint64_t)remove_entry * hash_table_p->item_size;
+		src = (void *)(last_block+1) + (uint64_t)last_entry * hash_table_p->item_size;
 		memcpy(dst, src, hash_table_p->item_size);
 	}
 	if ( (last_entry == 0) && (last_block != block_head)) {
@@ -320,7 +320,7 @@ void ewx_hash_table_show(ewx_hash_table_t *hash_table_p, ewx_hash_table_show_han
 		if (hash_table_p->lock != NULL) {
 			cvmx_spinlock_lock(&hash_table_p->lock[i]);
 		}
-		current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + hash_table_p->bucket_size * i);
+		current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + (uint64_t)(hash_table_p->bucket_size) * i);
 		buckets = 1;
 		do {
 			if (current->next_offset != 0) {
