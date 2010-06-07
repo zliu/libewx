@@ -417,6 +417,12 @@ void change_prompt( int argc, char *argv[] )
 	strncpy( prompt, (char *)buffer, 32 );
 }
 
+int ewx_shell_app_init( void )
+{
+	print_prompt();
+	return 0;
+}
+
 void ewx_shell_init( void )
 {
 	int i;
@@ -430,10 +436,7 @@ void ewx_shell_init( void )
 	ewx_shell_cmd_register( "help", "show all commands", shell_help );
 	ewx_shell_cmd_register( "h", "show all commands", shell_help );
 	//register_shell_cmd( "prompt", "change prompt", change_prompt );
+    ewx_shell_app_init();
 }
 
-int ewx_shell_app_init( void )
-{
-	print_prompt();
-	return 0;
-}
+
