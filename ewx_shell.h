@@ -54,6 +54,8 @@ void ewx_shell_init( void );
  */
 int ewx_shell_app_init( void );
 
+uint8_t ewx_shell_status_check();
+
 #endif
 
 //@}

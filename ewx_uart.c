@@ -128,6 +128,21 @@ int uart_printf( int uart_index, const char *format, ... )
 	return result;
 }
 
+int uart_prints( int uart_index, char *buffer, int len)
+{
+	cvmx_spinlock_lock( &uart_printf_lock );
+	while ( len > 0 ) {
+		if ( *buffer == '\n' ) {
+			uart_write_byte( uart_index, '\r' );
+		}
+		uart_write_byte( uart_index, *buffer );
+		buffer++;
+		len--;
+	}
+	cvmx_spinlock_unlock( &uart_printf_lock );
+	return len;
+}
+
 
 /**
  * Get a single byte from serial port.

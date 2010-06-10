@@ -71,6 +71,8 @@ static int escape_pressed = 0;
 static int escape_seq_len = 0;
 static char escape_seq_buf[ 16 ];
 
+static CVMX_SHARED uint8_t shell_status = 0;    // 0 stands for not loaded; 1 stands for loaded;
+                                                // UnFixed: 状态最好用enum类型表示
 #define DEFAULT_PROMPT "PASH # "
 char prompt[ 32 ];
 
@@ -437,6 +439,12 @@ void ewx_shell_init( void )
 	ewx_shell_cmd_register( "h", "show all commands", shell_help );
 	//register_shell_cmd( "prompt", "change prompt", change_prompt );
     ewx_shell_app_init();
+    shell_status = 1;
+}
+
+uint8_t ewx_shell_status_check()
+{
+    return shell_status;
 }
 
 
