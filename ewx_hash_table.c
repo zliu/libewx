@@ -228,10 +228,12 @@ int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx
 		}
 		data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/		
 		for (i=0; i<current->valid_count; i++) {
+            printf("LIB:data:%016lx\n",*(uint64_t *)data);
 			if (compare(this, user_data, data) == 0) {
 				/*调用用户自己的释放函数*/
 				if (remove != NULL) {
 					result = remove(this, user_data, data);
+                    printf("LIB:ewx_remove:result %d\n", result);
 					if (result != 0 ) {
 						/*释放完成( > 0 )，或者释放失败( < 0 )，返回*/
 						goto end;
@@ -248,19 +250,23 @@ int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx
 					last_flag = 1;
 				}
 				remove_flag = 1;
+                printf("LIB:ewx_remove:flag(in for loop) %d\n",remove_flag);
 				break;
 			}
 			data += hash_table_p->item_size;
 		}
 		if (remove_flag) {
+            printf("LIB:ewx_remove:flag %d\n",remove_flag);
 			break;
 		}
 		pre = current;
 		current = next;
 	} while((next != NULL));
 
+    printf("LIB:ewx_remove:flag(out of loop) %d\n",remove_flag);
 	if (!remove_flag) {
 		result = -EWX_ITEM_NOT_FOUND;
+        printf("LIB:ewx_remove:NOT FOUND\n");
 		goto end;
 	}
 
