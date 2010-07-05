@@ -1,9 +1,10 @@
 #ifndef __EWX_DEBUG__
 #define __EWX_DEBUG__
 
-extern int ewx_printd(uint8_t level, int uart_index, const char *format, ... );
-extern uint8_t ewx_debug_level_query();
-extern int ewx_debug_init();
+int ewx_printd(uint8_t level, int uart_index, const char *format, ... );
+uint8_t ewx_debug_level_query();
+int ewx_debug_init();
+int ewx_dump_work(uint8_t level, cvmx_wqe_t *work);
 
 #undef printd
 #define printd( level, format, ... ) ewx_printd( level, 0, format, ##__VA_ARGS__ )
@@ -13,5 +14,16 @@ extern int ewx_debug_init();
         if (ewx_debug_level_query() > level) { \
             code \
         } \
+    } while (0)
+#endif
+
+#define debug_printd(level, code) \
+    do { \
+#define printf( format, ... ) ewx_printd( level, 0, format, ##__VA_ARGS__ ) \
+            code \
+#undef printf \
+#ifndef __UART_H__ \
+        #define printf( format, ... ) uart_printf( 0, format, ##__VA_ARGS__ ) \
+#endif
     } while (0)
 #endif
