@@ -8,7 +8,7 @@
 #include "ewx_thread.h"
 #include "ewx_code.h"
 
-int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn, 
+int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn,
 								 void *param, uint32_t param_len)
 {
 	cvmx_wqe_t *wqe_p;
@@ -19,11 +19,11 @@ int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t q
 	}
 
 	wqe_p = cvmx_fpa_alloc(CVMX_FPA_WQE_POOL);
-	
+
 	if (wqe_p == NULL) {
 		return -EWX_NO_SPACE_ERROR;
 	}
-	
+
 	memset(wqe_p, 0, sizeof(cvmx_wqe_t));
 	wqe_p->unused = EWX_THREAD_WORK_UNUSED;
 	p = (ewx_thread_t *)wqe_p->packet_data;
@@ -40,8 +40,8 @@ int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t q
 	return 0;
 }
 
-int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn, 
-								void *param, uint32_t param_len, uint64_t tick)
+int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn,
+								void *param, uint32_t param_len, uint16_t tick)
 {
 	cvmx_wqe_t *wqe_p;
 	ewx_thread_t *p;
@@ -52,11 +52,11 @@ int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qo
 	}
 
 	wqe_p = cvmx_fpa_alloc(CVMX_FPA_WQE_POOL);
-	
+
 	if (wqe_p == NULL) {
 		return -EWX_NO_SPACE_ERROR;
 	}
-	
+
 	memset(wqe_p, 0, sizeof(cvmx_wqe_t));
 	wqe_p->unused = EWX_THREAD_WORK_UNUSED;
 	wqe_p->tag = tag;
@@ -79,7 +79,7 @@ int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qo
 		result = cvmx_tim_add_entry(wqe_p, p->tick, NULL);
 	}
 	return result;
-	
+
 }
 
 int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
@@ -94,7 +94,7 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
 	if (p->fn != NULL) {
 		p->fn(p, p->param);
 	}
-	
+
 	if (p->free) {
 		//cvmx_helper_free_packet_data(wqe_p);
 		cvmx_fpa_free(wqe_p, CVMX_FPA_WQE_POOL, 0);
@@ -103,6 +103,7 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
 			//cvmx_pow_tag_sw_desched(wqe_p->tag, wqe_p->tag_type, wqe_p->grp, 0);
 			cvmx_pow_desched(0);
 		} else {
+            //printf("tick:[[%d]]\n", p->tick);
 			cvmx_tim_add_entry(wqe_p, p->tick, NULL);
 		}
 	}
