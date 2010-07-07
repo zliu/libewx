@@ -331,7 +331,7 @@ void ewx_hash_table_show(ewx_hash_table_t *hash_table_p, ewx_hash_table_show_han
 			}
 			data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/
 			for (j=0; j<current->valid_count; j++) {
-				show(data);
+				show(data, i);
 				data += hash_table_p->item_size;
 			}
 			current = next;

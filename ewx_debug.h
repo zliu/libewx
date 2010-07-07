@@ -17,13 +17,4 @@ int ewx_dump_work(uint8_t level, cvmx_wqe_t *work);
     } while (0)
 #endif
 
-#define debug_printd(level, code) \
-    do { \
-#define printf( format, ... ) ewx_printd( level, 0, format, ##__VA_ARGS__ ) \
-            code \
-#undef printf \
-#ifndef __UART_H__ \
-        #define printf( format, ... ) uart_printf( 0, format, ##__VA_ARGS__ ) \
-#endif
-    } while (0)
 #endif
