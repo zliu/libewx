@@ -79,12 +79,12 @@ char prompt[ 32 ];
 int ewx_shell_cmd_register( const char *name, const char *comment, void ( *func )( int, char *[] ) )
 {
     int i;
-    
+
     if ( !name || !name[ 0 ] ) {
         printf( "register_shell_cmd: bad shell cmd name.\n" );
         return -1;
     }
-    
+
     for ( i = 0; i < MAX_CMDS; i++ ) {
         if ( strcmp( name, cmd_list[ i ].name ) == 0 ) {
             break;
@@ -94,7 +94,7 @@ int ewx_shell_cmd_register( const char *name, const char *comment, void ( *func 
         printf( "register_shell_cmd: shell cmd [%s] already registered.\n", name );
         return -1;
     }
-    
+
     for ( i = 0; i < MAX_CMDS; i++ ) {
         if ( cmd_list[ i ].name[ 0 ] == 0 ) {
             break;
@@ -104,7 +104,7 @@ int ewx_shell_cmd_register( const char *name, const char *comment, void ( *func 
         printf( "register_shell_cmd: too more shell cmds.\n" );
         return -1;
     }
-    
+
     strncpy( cmd_list[ i ].name, name, CMD_NAME_SIZE );
 	strncpy( cmd_list[ i ].comment, comment, CMD_COMMENT_SIZE );
     cmd_list[ i ].func = func;
@@ -114,22 +114,22 @@ int ewx_shell_cmd_register( const char *name, const char *comment, void ( *func 
 int ewx_shell_cmd_unregister( const char *name )
 {
     int i;
-    
+
     if ( !name || !name[ 0 ] ) {
         printf( "unregister_shell_cmd: bad shell cmd name.\n" );
         return -1;
     }
-    
+
     for ( i = 0; i < MAX_CMDS; i++ ) {
         if ( strcmp( name, cmd_list[ i ].name ) == 0 ) {
             break;
         }
     }
-    if ( i >= MAX_CMDS ) { 
+    if ( i >= MAX_CMDS ) {
         printf( "unregister_shell_cmd: shell cmd [%s] has not registered.\n", name );
         return -1;
     }
-    
+
     cmd_list[ i ].name[ 0 ] = 0;
     return 0;
 }
@@ -138,27 +138,27 @@ static void execute_cmd( char *buf )
 {
     const char *delim = " \t";
     int argc = 0, i = 0;
-    
+
     // Parse command line and setup args
     argv[ argc++ ] = strtok( buf, delim );
     if ( !argv[ argc - 1 ] ) {
         printf("Bad command token??\n");
         return;
     }
-    
+
     while ( 1 ) {
         // Can't handle more than MAX_ARGV_ARGS arguments
         if ( argc >= MAX_ARGV_ARGS ) {
             break;
         }
-        
+
         argv[ argc++ ] = strtok( 0, delim );
         if ( !argv[ argc - 1 ] ) {
             argc--;
             break;
         }
     }
-    
+
     // Search for the command
     for ( i = 0; i < MAX_CMDS; i++ ) {
         if ( strcmp( cmd_list[ i ].name, argv[ 0 ] ) == 0 ) {
@@ -173,7 +173,7 @@ static void execute_cmd( char *buf )
         printf( "Bad function pointer!\n" );
         return;
     }
-    
+
     // call the command handler
     ( cmd_list[ i ].func )( argc, argv );
 }
@@ -339,7 +339,7 @@ __attribute__( ( noreturn ) ) void shell( void )
 {
     int ch;
     int i = 0;
-    
+
     print_prompt();
     while ( 1 ) {
         ch = getchar_nowait();
@@ -347,10 +347,10 @@ __attribute__( ( noreturn ) ) void shell( void )
             cvmx_wait( 10000 );
             continue;
         }
-        
+
         putchar( ch );
         shell_cmd_buf[ i++ ] = ch;
-        
+
         if ( ch == '\n' ) {
             shell_cmd_buf[ i - 1 ] = 0;
             if ( shell_cmd_buf[ 0 ] != 0 ) {
@@ -401,14 +401,14 @@ void change_prompt( int argc, char *argv[] )
 	int i;
 	unsigned char buffer[ 256 ];
 	char *ptr;
-	
+
 	if ( argc < 2 || !argv[ 1 ] )
 	{
 		printf( "Bad args, argc = %d, argv[1] = [%s]\n", argc, argv[ 1 ] );
 		return;
 	}
 	ptr = (char *)buffer;
-	
+
 	for ( i = 1; i < argc; i++ )
 	{
 		ptr += sprintf( ptr, "%s", argv[ i ] );
@@ -434,7 +434,7 @@ void ewx_shell_init( void )
 	{
 		cmd_list[ i ].name[ 0 ] = 0;
 	}
-	
+
 	ewx_shell_cmd_register( "help", "show all commands", shell_help );
 	ewx_shell_cmd_register( "h", "show all commands", shell_help );
 	//register_shell_cmd( "prompt", "change prompt", change_prompt );

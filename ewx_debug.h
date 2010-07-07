@@ -15,6 +15,5 @@ int ewx_dump_work(uint8_t level, cvmx_wqe_t *work);
             code \
         } \
     } while (0)
-#endif
 
 #endif

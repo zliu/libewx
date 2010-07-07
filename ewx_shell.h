@@ -1,6 +1,8 @@
 #ifndef __EWX_SHELL_H__
 #define __EWX_SHELL_H__
 
+#include "cvmx.h"
+
 /**@addtogroup shell_function shell操作函数（内部使用）
  * @ingroup hardware_function
  */
