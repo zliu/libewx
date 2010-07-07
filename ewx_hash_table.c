@@ -2,10 +2,10 @@
  * @file   ewx_hash_table.c
  * @author xdzhou <zhou.xiaodong@embedway.com>
  * @date   Wed Mar  3 17:36:48 2010
- * 
+ *
  * @brief  这个是hash表的库
- * 
- * 
+ *
+ *
  */
 #include <cvmx.h>
 #include <cvmx-spinlock.h>
@@ -57,10 +57,10 @@ ewx_hash_table_t *ewx_hash_table_init(char *name, int bucket_num, int bucket_siz
 	return ptr;
 }
 
-void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_hash_table_compare_handle_t compare, void *this, 
+void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_hash_table_compare_handle_t compare, void *this,
 							void *user_data)
 {
-	
+
 	ewx_bucket_hd_t *current, *next;
 	int i, found = 0;
 	void *data;
@@ -68,7 +68,7 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
 	if (cvmx_unlikely(hash_table_p->bucket_num <= hash)) {
 		return NULL;
 	}
-	
+
 	if (hash_table_p->lock != NULL) {
 		cvmx_spinlock_lock(&hash_table_p->lock[hash]);
 	}
@@ -82,7 +82,7 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
 			next = NULL;
 		}
 		data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/
-		
+
 		for (i=0; i<current->valid_count; i++) {
 			if (compare(this, user_data, data) == 0) {
 				found = 1;
@@ -91,13 +91,13 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
 			data += hash_table_p->item_size;
 		}
 		current = next;
-	} while ((next != NULL) && (found == 0)); 
-	
+	} while ((next != NULL) && (found == 0));
+
 	/*搜索结束*/
 	if (hash_table_p->lock != NULL) {
 		cvmx_spinlock_unlock(&hash_table_p->lock[hash]);
 	}
-	
+
 	if (found) {
 		return data;
 	} else {
@@ -105,8 +105,8 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
 	}
 }
 
-int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p, ewx_hash_table_compare_handle_t compare, 
-							  void *this, void *user_data, ewx_hash_table_insert_handle_t insert, 
+int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p, ewx_hash_table_compare_handle_t compare,
+							  void *this, void *user_data, ewx_hash_table_insert_handle_t insert,
 							  ewx_hash_table_bucket_alloc_handle_t bucket_alloc)
 {
 
@@ -128,7 +128,7 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 			} else {
 				next = NULL;
 			}
-			data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/		
+			data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/
 			if (compare != NULL) {
 				for (i=0; i<current->valid_count; i++) {
 					if (compare(this, user_data, data) != 0) {
@@ -140,7 +140,7 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 							if (result != 0 ) {
 								/*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
 								goto end;
-							} 
+							}
 						}
 						break;
 					}
@@ -166,12 +166,12 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 			if (result != 0 ) {
 				/*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
 				goto end;
-			} 
+			}
 		}
 		/*如果insert返回为0，那么仍旧插入新节点*/
 		current->valid_count++;
 	}
-	
+
 	if (free_pos_p == NULL) {
 		if (bucket_alloc == NULL) {
 			result =  -EWX_NO_SPACE_ERROR;
@@ -187,9 +187,9 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 		current->valid_count = 1;
 		free_pos_p = (void *)(current+1);
 	}
-	
+
 	memcpy(free_pos_p, this, hash_table_p->item_size);
-end:	
+end:
 	if (hash_table_p->lock != NULL) {
 		cvmx_spinlock_unlock(&hash_table_p->lock[hash]);
 	}
@@ -210,12 +210,12 @@ int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx
 	remove_flag = remove_entry = 0;
 	last_flag = last_entry = 0;
 	remove_block = last_block = NULL;
-	
+
 
 	if (hash_table_p->lock != NULL) {
 		cvmx_spinlock_lock(&hash_table_p->lock[hash]);
 	}
-	
+
 	current = (ewx_bucket_hd_t *)((void *)hash_table_p->base_ptr + (uint64_t)(hash_table_p->bucket_size) * hash);
 	block_head = current;
 	pre = pre_last_block = current;
@@ -226,23 +226,21 @@ int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx
 		} else {
 			next = NULL;
 		}
-		data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/		
+		data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/
 		for (i=0; i<current->valid_count; i++) {
-            printf("LIB:data:%016lx\n",*(uint64_t *)data);
 			if (compare(this, user_data, data) == 0) {
 				/*调用用户自己的释放函数*/
 				if (remove != NULL) {
 					result = remove(this, user_data, data);
-                    printf("LIB:ewx_remove:result %d\n", result);
 					if (result != 0 ) {
 						/*释放完成( > 0 )，或者释放失败( < 0 )，返回*/
 						goto end;
-					} 
+					}
 				}
 				/*必然匹配，并且需要真正删除节点*/
 				remove_block = current;
 				remove_entry = i;
-				
+
 				if (current->next_offset == 0) {
 					pre_last_block = pre;
 					last_block = current;
@@ -250,23 +248,19 @@ int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx
 					last_flag = 1;
 				}
 				remove_flag = 1;
-                printf("LIB:ewx_remove:flag(in for loop) %d\n",remove_flag);
 				break;
 			}
 			data += hash_table_p->item_size;
 		}
 		if (remove_flag) {
-            printf("LIB:ewx_remove:flag %d\n",remove_flag);
 			break;
 		}
 		pre = current;
 		current = next;
 	} while((next != NULL));
 
-    printf("LIB:ewx_remove:flag(out of loop) %d\n",remove_flag);
 	if (!remove_flag) {
 		result = -EWX_ITEM_NOT_FOUND;
-        printf("LIB:ewx_remove:NOT FOUND\n");
 		goto end;
 	}
 
@@ -335,20 +329,20 @@ void ewx_hash_table_show(ewx_hash_table_t *hash_table_p, ewx_hash_table_show_han
 			} else {
 				next = NULL;
 			}
-			data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/		
+			data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/
 			for (j=0; j<current->valid_count; j++) {
 				show(data);
 				data += hash_table_p->item_size;
 			}
 			current = next;
-		} while(next != NULL); 
+		} while(next != NULL);
 		if (buckets >= max_buckets) {
 			max_buckets = buckets;
 		}
-		
+
 		if (hash_table_p->lock != NULL) {
 			cvmx_spinlock_unlock(&hash_table_p->lock[i]);
-		}		
+		}
 	}
 	printf("max_buckets=%d\n", max_buckets);
 }
