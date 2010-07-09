@@ -88,7 +88,7 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
 	p = (ewx_thread_t *)wqe_p->packet_data;
 
 	if ((wqe_p->unused != EWX_THREAD_WORK_UNUSED) || (p->magic != EWX_THREAD_MAGIC_NUM)) {
-		return 0;
+		return EWX_NOT_TIM_WQE;
 	}
 
 	if (p->fn != NULL) {
@@ -103,7 +103,7 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
 			//cvmx_pow_tag_sw_desched(wqe_p->tag, wqe_p->tag_type, wqe_p->grp, 0);
 			cvmx_pow_desched(0);
 		} else {
-            //printf("tick:[[%d]]\n", p->tick);
+            /*printf("re add timer tick:[[%d]]\n", p->tick);*/
 			cvmx_tim_add_entry(wqe_p, p->tick, NULL);
 		}
 	}
