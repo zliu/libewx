@@ -141,7 +141,9 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 								/*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
 								goto end;
 							}
-						}
+						} else {
+                            goto end;
+                        }
 						break;
 					}
 					data += hash_table_p->item_size;

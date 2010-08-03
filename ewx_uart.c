@@ -58,8 +58,8 @@ inline void uart_write_byte( int uart_index, uint8_t ch )
 		if ( pci_cons_desc_addr )
 		{
     	    if (ch == '\n')
-				octeon_pci_console_write(pci_cons_desc_addr, 0,  &r, 1, 0);
-			octeon_pci_console_write(pci_cons_desc_addr, 0,  (char *)&ch, 1, 0);
+				octeon_pci_console_write(pci_cons_desc_addr, 0,  &r, 1, OCT_PCI_CON_FLAG_NONBLOCK);
+			octeon_pci_console_write(pci_cons_desc_addr, 0,  (char *)&ch, 1, OCT_PCI_CON_FLAG_NONBLOCK);
 		}
 		else
 		{

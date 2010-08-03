@@ -62,14 +62,61 @@ void ewx_debug_init()
     }
 }
 
-int ewx_dump_work(uint8_t level, cvmx_wqe_t *work)
+int ewx_dump_packet(uint8_t level, cvmx_buf_ptr_t  buffer_ptr, uint64_t len)
 {
     uint32_t        count, print_count;
-    uint64_t        remaining_bytes;
-    cvmx_buf_ptr_t  buffer_ptr;
+    uint64_t        remaining_bytes = len;
     uint64_t        start_of_buffer;
     uint8_t *       data_address;
     uint8_t *       end_of_data;
+
+    cvmx_dprintf("------ packet_ptr ------\n");
+
+    while (remaining_bytes)
+    {
+        start_of_buffer = ((buffer_ptr.s.addr >> 7) - buffer_ptr.s.back) << 7;
+        cvmx_dprintf("Buffer Start(PHY)         :   %llx\n", (unsigned long long)start_of_buffer);
+        cvmx_dprintf("Buffer I          s.i     :   %u\n", buffer_ptr.s.i);
+        cvmx_dprintf("Buffer Back       s.back  :   %u\n", buffer_ptr.s.back);
+        cvmx_dprintf("Buffer Pool       s.pool  :   %u\n", buffer_ptr.s.pool);
+        cvmx_dprintf("Buffer Addr(PHY)  s.addr  :   %llx\n", (unsigned long long)buffer_ptr.s.addr);
+        cvmx_dprintf("Buffer Size       s.size  :   %u\n", buffer_ptr.s.size);
+
+        data_address = (uint8_t *)cvmx_phys_to_ptr(buffer_ptr.s.addr);
+        end_of_data = data_address + buffer_ptr.s.size;
+        count = 0;
+        print_count = 0;
+        cvmx_dprintf("            00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F\n");
+        while (data_address < end_of_data)
+        {
+            if (remaining_bytes == 0)
+                break;
+            else
+                remaining_bytes--;
+            if ((print_count & 0xf) == 0) {
+                cvmx_dprintf("    %04x    ", print_count);
+            }
+            cvmx_dprintf("%02x  ", (unsigned int)*data_address);
+            data_address++;
+            print_count++;
+            if (remaining_bytes && (count == 0xf))
+            {
+                cvmx_dprintf("\n");
+                count = 0;
+            }
+            else
+                count++;
+        }
+        if (remaining_bytes)
+            buffer_ptr = *(cvmx_buf_ptr_t*)cvmx_phys_to_ptr(buffer_ptr.s.addr - 8);
+    }
+    cvmx_dprintf("\n");
+    return 0;
+}
+
+int ewx_dump_work(uint8_t level, cvmx_wqe_t *work)
+{
+    uint32_t        print_count;
 
     if (debug_level < level)
         return 0;
@@ -142,56 +189,11 @@ int ewx_dump_work(uint8_t level, cvmx_wqe_t *work)
         cvmx_dprintf("vlan_id       (12):   VID         %u\n", work->word2.s.vlan_id);
     }
 
-    if (work->word2.s.bufs == 0)
-    {
+    if (work->word2.s.bufs == 0) {
         cvmx_dprintf("Packet is stored at packet_data array in work\n");
     }
-    else
-    {
-        buffer_ptr = work->packet_ptr;
-        remaining_bytes = work->len;
-
-        cvmx_dprintf("------ packet_ptr ------\n");
-
-        while (remaining_bytes)
-        {
-            start_of_buffer = ((buffer_ptr.s.addr >> 7) - buffer_ptr.s.back) << 7;
-            cvmx_dprintf("Buffer Start(PHY)         :   %llx\n", (unsigned long long)start_of_buffer);
-            cvmx_dprintf("Buffer I          s.i     :   %u\n", buffer_ptr.s.i);
-            cvmx_dprintf("Buffer Back       s.back  :   %u\n", buffer_ptr.s.back);
-            cvmx_dprintf("Buffer Pool       s.pool  :   %u\n", buffer_ptr.s.pool);
-            cvmx_dprintf("Buffer Addr(PHY)  s.addr  :   %llx\n", (unsigned long long)buffer_ptr.s.addr);
-            cvmx_dprintf("Buffer Size       s.size  :   %u\n", buffer_ptr.s.size);
-
-            data_address = (uint8_t *)cvmx_phys_to_ptr(buffer_ptr.s.addr);
-            end_of_data = data_address + buffer_ptr.s.size;
-            count = 0;
-            print_count = 0;
-            cvmx_dprintf("            00  01  02  03  04  05  06  07  08  09  0A  0B  0C  0D  0E  0F\n");
-            while (data_address < end_of_data)
-            {
-                if (remaining_bytes == 0)
-                    break;
-                else
-                    remaining_bytes--;
-                if ((print_count & 0xf) == 0) {
-                    cvmx_dprintf("    %04x    ", print_count);
-                }
-                cvmx_dprintf("%02x  ", (unsigned int)*data_address);
-                data_address++;
-                print_count++;
-                if (remaining_bytes && (count == 0xf))
-                {
-                    cvmx_dprintf("\n");
-                    count = 0;
-                }
-                else
-                    count++;
-            }
-            if (remaining_bytes)
-                buffer_ptr = *(cvmx_buf_ptr_t*)cvmx_phys_to_ptr(buffer_ptr.s.addr - 8);
-        }
-        cvmx_dprintf("\n");
+    else {
+        ewx_dump_packet(level, work->packet_ptr, work->len);
     }
 
     cvmx_dprintf("------ packet_data ------\n");
