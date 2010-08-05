@@ -184,7 +184,7 @@ int uart_read_byte_nowait( int uart_index )
 	}
 	else
 	{
-		char c;
+		char c = 0;
 		if ( !pci_cons_desc_addr )
 		{
 			return 0;
