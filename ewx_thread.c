@@ -110,9 +110,19 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
 	return 0;
 }
 
-
 int32_t ewx_thread_stop(ewx_thread_t *p)
 {
 	p->free = 1;
 	return 0;
+}
+
+int32_t ewx_timer_init(uint64_t tick, uint64_t max_ticks)
+{
+    int32_t status;
+    status = cvmx_tim_setup(tick , max_ticks);
+    if (status != 0) {
+        return status;
+    }
+    cvmx_tim_start();
+    return 0;
 }
