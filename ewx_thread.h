@@ -51,7 +51,6 @@ int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t q
  *
  * @return 0，成功；否则，返回错误码
  */
-
 int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn,
 								void *param, uint32_t param_len, uint16_t delay);
 
@@ -71,8 +70,22 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p);
  *
  * @return 0
  */
-
 int32_t ewx_thread_stop(ewx_thread_t *p);
 
+
+/**
+ * @brief 计时器初始化函数，计时器时钟每隔tick微秒跳动一次，计时间隔最小为tick微秒，
+ *        最长间隔为tick*max_ticks微秒；
+ *        调用该函数之前需要先为timer分配内存空间，也即CVMX_FPA_TIMER_POOL，
+ *        其大小应该不小于同时运行的计时器的数目；
+ *
+ * @param tick 计时器的时钟间隔，单位：微秒
+ * @param max_ticks 计时器的最大计时间隔，单位：微秒*tick
+ *                  最小值为 2
+ *                  最大值为 (CVMX_TIM_NUM_BUCKETS - 1)
+ *
+ * @return 0，成功；否则，返回错误码
+ */
+int32_t ewx_timer_init(uint64_t tick, uint64_t max_ticks);
 //@}
 #endif
