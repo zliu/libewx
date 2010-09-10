@@ -14,9 +14,17 @@
 #include "ewx_helper.h"
 #include "ewx_hash_table.h"
 
+extern int ewx_board_check();
+extern int ewx_board_valid();
+
 ewx_hash_table_t *ewx_hash_table_init(char *name, int bucket_num, int bucket_size, int item_size, int auto_lock)
 {
 	int i;
+
+    ewx_board_check();
+    if (!ewx_board_valid()) {
+        return 0;
+    }
 
 	bucket_size = align(bucket_size, 128);
 
@@ -60,6 +68,9 @@ ewx_hash_table_t *ewx_hash_table_init(char *name, int bucket_num, int bucket_siz
 void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_hash_table_compare_handle_t compare, void *this,
 							void *user_data)
 {
+    if (!ewx_board_valid()) {
+        return 0;
+    }
 
 	ewx_bucket_hd_t *current, *next;
 	int i, found = 0;
@@ -109,6 +120,9 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 							  void *this, void *user_data, ewx_hash_table_insert_handle_t insert,
 							  ewx_hash_table_bucket_alloc_handle_t bucket_alloc)
 {
+    if (!ewx_board_valid()) {
+        return 0;
+    }
 
 	ewx_bucket_hd_t *current, *next, *pre;
 	int i, result = 0;
@@ -201,6 +215,10 @@ end:
 int32_t ewx_hash_table_remove(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_hash_table_compare_handle_t compare, void *this,
 							  void *user_data, ewx_hash_table_remove_handle_t remove, ewx_hash_table_bucket_free_handle_t bucket_free)
 {
+    if (!ewx_board_valid()) {
+        return 0;
+    }
+
 	ewx_bucket_hd_t *current, *next, *pre;
 	ewx_bucket_hd_t *remove_block, *last_block, *pre_last_block, *block_head;
 	int i, result = 0;
@@ -309,6 +327,10 @@ end:
 
 void ewx_hash_table_show(ewx_hash_table_t *hash_table_p, ewx_hash_table_show_handle_t show)
 {
+    if (!ewx_board_valid()) {
+        return;
+    }
+
 	uint32_t i, j;
 	ewx_bucket_hd_t *current, *next;
 	void *data;
