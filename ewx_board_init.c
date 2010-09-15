@@ -144,10 +144,6 @@ int ewx_board_init()
         if (!ewx_board_valid()) {
             return 0;
         }
-#if EWX_DEBUG_ENABLE
-        ewx_uart_init();
-        ewx_shell_init();
-#endif
 		if (!(coremask_se & 1)) {
 			/*there is another SE or linux, so we skip the io_global init, just as linux-filter*/
             single_se_running = 0;
