@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <stdarg.h>
 
@@ -368,7 +369,7 @@ __attribute__( ( noreturn ) ) void shell( void )
     }
 }
 
-void shell_help( int argc, char *argv[] )
+void __shell_help_shell_cmd( int argc, char *argv[] )
 {
 	int i;
 	//int ch;
@@ -394,6 +395,51 @@ void shell_help( int argc, char *argv[] )
 			}
 		}*/
 	}
+}
+
+static void __reboot_shell_cmd(int argc, char *argv[])
+{
+    cvmx_write_csr(CVMX_CIU_SOFT_RST, 1ull);
+}
+
+static void __rr_shell_cmd(int argc, char *argv[])
+{
+    uint64_t addr;
+    uint64_t val;
+    if (argc == 2) {
+        errno = 0;
+        addr = strtoull(argv[1], 0, 16);
+        if ( errno != 0 ) {
+            printf("error reg address.\n");
+            return;
+        }
+        val = cvmx_read_csr(CVMX_ADD_IO_SEG(addr));
+        printf("    0x%016llx\n", (uint64_t)val);
+    } else {
+        printf( "error parameter.\n" );
+    }
+}
+
+static void __rw_shell_cmd(int argc, char *argv[])
+{
+    uint64_t addr;
+    uint64_t val;
+    if (argc == 3) {
+        errno = 0;
+        addr = strtoull(argv[ 1 ], 0, 16);
+        if (errno != 0) {
+            printf( "error reg address.\n" );
+            return;
+        }
+        val = strtoull( argv[ 2 ], 0, 16 );
+        if ( errno != 0 ) {
+            printf( "error reg value.\n" );
+            return;
+        }
+        cvmx_write_csr(CVMX_ADD_IO_SEG(addr), val);
+    } else {
+        printf( "error parameter.\n" );
+    }
 }
 
 void change_prompt( int argc, char *argv[] )
@@ -435,8 +481,11 @@ void ewx_shell_init( void )
 		cmd_list[ i ].name[ 0 ] = 0;
 	}
 
-	ewx_shell_cmd_register( "help", "show all commands", shell_help );
-	ewx_shell_cmd_register( "h", "show all commands", shell_help );
+	ewx_shell_cmd_register( "help", "show all commands", __shell_help_shell_cmd );
+	ewx_shell_cmd_register( "h", "show all commands", __shell_help_shell_cmd );
+	ewx_shell_cmd_register( "reboot", "reboot", __reboot_shell_cmd);
+	ewx_shell_cmd_register( "rr", "read register", __rr_shell_cmd );
+	ewx_shell_cmd_register( "rw", "write register", __rw_shell_cmd );
 	//register_shell_cmd( "prompt", "change prompt", change_prompt );
     ewx_shell_app_init();
     shell_status = 1;
