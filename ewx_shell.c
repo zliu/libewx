@@ -245,6 +245,14 @@ void ewx_shell_run( void )
 					print_prompt();
 					fflush( stdout );
 					break;
+                case CTRL_U:
+                    while (shell_cmd_index > 0) {
+						shell_cmd_index--;
+                        shell_cmd_buf[ shell_cmd_index ] = 0;
+						printf( "\b \b" );
+						fflush( stdout );
+                    }
+					break;
 				case BS:
 				case DEL:
 					escape_pressed = 0;
@@ -406,17 +414,37 @@ static void __rr_shell_cmd(int argc, char *argv[])
 {
     uint64_t addr;
     uint64_t val;
-    if (argc == 2) {
+    char *endptr;
+    uint8_t low_bit, high_bit;
+
+    if ((argc == 2) || (argc == 3)) {
         errno = 0;
         addr = strtoull(argv[1], 0, 16);
         if ( errno != 0 ) {
-            printf("error reg address.\n");
+            printf("Err: Error reg address.\n");
             return;
         }
-        val = cvmx_read_csr(CVMX_ADD_IO_SEG(addr));
+        if (argc == 3) {
+            high_bit = (uint8_t)strtoull(argv[2], &endptr, 10);
+            if ((*endptr != ':') || (high_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+            low_bit = (uint8_t)strtoull(endptr + 1, &endptr, 10);
+            if ((high_bit < low_bit) || (low_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+            val = (cvmx_read_csr(CVMX_ADD_IO_SEG(addr)) >> low_bit)
+                  & (((uint64_t)1 << (high_bit - low_bit) << 1) - 1 );
+        } else {
+            val = cvmx_read_csr(CVMX_ADD_IO_SEG(addr));
+        }
         printf("    0x%016llx\n", (uint64_t)val);
+    } else if (argc == 0) {
+        printf("Usage: rr ADDRESS [HIGH-BIT:LOW-BIT]");
     } else {
-        printf( "error parameter.\n" );
+        printf("Err: Error parameter.\n");
     }
 }
 
@@ -424,21 +452,48 @@ static void __rw_shell_cmd(int argc, char *argv[])
 {
     uint64_t addr;
     uint64_t val;
-    if (argc == 3) {
+    char *endptr;
+    uint8_t low_bit = 0, high_bit = 0;
+
+    if ((argc == 3) || (argc == 4)) {
         errno = 0;
-        addr = strtoull(argv[ 1 ], 0, 16);
+        addr = strtoull(argv[1], 0, 16);
         if (errno != 0) {
-            printf( "error reg address.\n" );
+            printf( "Err: Error reg address.\n" );
             return;
         }
-        val = strtoull( argv[ 2 ], 0, 16 );
-        if ( errno != 0 ) {
-            printf( "error reg value.\n" );
-            return;
+        if (argc == 4) {
+            high_bit = (uint8_t)strtoull(argv[2], &endptr, 10);
+            if ((*endptr != ':') || (high_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+            low_bit = (uint8_t)strtoull(endptr + 1, &endptr, 10);
+            if ((high_bit < low_bit) || (low_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+
+            val = strtoull( argv[3], 0, 16 );
+            if ( errno != 0 ) {
+                printf("Err: Error reg value.\n");
+                return;
+            }
+            val = (cvmx_read_csr(CVMX_ADD_IO_SEG(addr))
+                   & ((((~(uint64_t)0 >> (high_bit) >> 1 << (high_bit - low_bit) << 1) + 1) << low_bit) - 1))
+                  | (val << low_bit);
+        } else {
+            val = strtoull( argv[2], 0, 16 );
+            if ( errno != 0 ) {
+                printf("Err: Error reg value.\n");
+                return;
+            }
         }
         cvmx_write_csr(CVMX_ADD_IO_SEG(addr), val);
+    } else if (argc == 0) {
+        printf("Usage: rw ADDRESS [HIGH-BIT:LOW-BIT] VALUE");
     } else {
-        printf( "error parameter.\n" );
+        printf("Err: Error parameter.\n");
     }
 }
 

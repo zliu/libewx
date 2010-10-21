@@ -65,7 +65,7 @@ static int __application_init_simple_exec(int num_packet_buffers)
     if (!cvmx_octeon_is_pass1())
     {
         /* Leave 16 bytes space for the ethernet header */
-        cvmx_write_csr(CVMX_PIP_IP_OFFSET, 2);
+        cvmx_write_csr(CVMX_PIP_IP_OFFSET, 3);
         int port, interface;
         /* Enable storing short packets only in the WQE */
         for (interface = 0; interface < 2; interface++)

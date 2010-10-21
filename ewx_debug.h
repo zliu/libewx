@@ -1,6 +1,8 @@
 #ifndef __EWX_DEBUG__
 #define __EWX_DEBUG__
 
+#include "cvmx-wqe.h"
+
 int ewx_debug_printd(uint8_t level, int uart_index, const char *format, ... );
 #undef printd
 #define printd( level, format, ... ) ewx_debug_printd( level, 0, format, ##__VA_ARGS__ )
