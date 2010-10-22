@@ -135,7 +135,7 @@ int ewx_shell_cmd_unregister( const char *name )
     return 0;
 }
 
-static void execute_cmd( char *buf )
+static void __execute_cmd( char *buf )
 {
     const char *delim = " \t";
     int argc = 0, i = 0;
@@ -179,7 +179,7 @@ static void execute_cmd( char *buf )
     ( cmd_list[ i ].func )( argc, argv );
 }
 
-void print_prompt( void )
+static void __print_prompt( void )
 {
     printf( prompt );
     fflush( stdout );
@@ -209,12 +209,12 @@ void ewx_shell_run( void )
 					if ( shell_cmd_buf[ 0 ] != 0 )
 					{
 						strcpy( shell_cmd_buf_tmp, shell_cmd_buf );
-						execute_cmd( shell_cmd_buf_tmp );
+						__execute_cmd( shell_cmd_buf_tmp );
 						browsing_history = 0;
 						if ( ( valid_history_entry > 0 ) &&
 							( strcmp( history_shell_cmd[ last_history_index ], shell_cmd_buf ) == 0 ) )
 						{
-							print_prompt();
+							__print_prompt();
 							break;
 						}
 						if ( valid_history_entry < MAX_HISTORY_CMDS )
@@ -229,7 +229,7 @@ void ewx_shell_run( void )
 						}
 						strcpy( history_shell_cmd[ last_history_index ], shell_cmd_buf );
 					}
-					print_prompt();
+					__print_prompt();
 					fflush( stdout );
 					break;
 				case TAB:
@@ -242,7 +242,7 @@ void ewx_shell_run( void )
 					shell_cmd_buf[ shell_cmd_index ] = 0;
 					shell_cmd_index = 0;
 					printf( "\n" );
-					print_prompt();
+					__print_prompt();
 					fflush( stdout );
 					break;
                 case CTRL_U:
@@ -349,7 +349,7 @@ __attribute__( ( noreturn ) ) void shell( void )
     int ch;
     int i = 0;
 
-    print_prompt();
+    __print_prompt();
     while ( 1 ) {
         ch = getchar_nowait();
         if ( ch == -1 ) {
@@ -363,10 +363,10 @@ __attribute__( ( noreturn ) ) void shell( void )
         if ( ch == '\n' ) {
             shell_cmd_buf[ i - 1 ] = 0;
             if ( shell_cmd_buf[ 0 ] != 0 ) {
-                execute_cmd( shell_cmd_buf );
+                __execute_cmd( shell_cmd_buf );
             }
             i = 0;
-            print_prompt();
+            __print_prompt();
         } else if ( ch == DEL ) {
             if (i != 0 ) {
                 i--;
@@ -377,7 +377,7 @@ __attribute__( ( noreturn ) ) void shell( void )
     }
 }
 
-void __shell_help_shell_cmd( int argc, char *argv[] )
+void __shell_help_shcmd( int argc, char *argv[] )
 {
 	int i;
 	//int ch;
@@ -405,12 +405,12 @@ void __shell_help_shell_cmd( int argc, char *argv[] )
 	}
 }
 
-static void __reboot_shell_cmd(int argc, char *argv[])
+static void __reboot_shcmd(int argc, char *argv[])
 {
     cvmx_write_csr(CVMX_CIU_SOFT_RST, 1ull);
 }
 
-static void __rr_shell_cmd(int argc, char *argv[])
+static void __rr_shcmd(int argc, char *argv[])
 {
     uint64_t addr;
     uint64_t val;
@@ -448,7 +448,7 @@ static void __rr_shell_cmd(int argc, char *argv[])
     }
 }
 
-static void __rw_shell_cmd(int argc, char *argv[])
+static void __rw_shcmd(int argc, char *argv[])
 {
     uint64_t addr;
     uint64_t val;
@@ -497,7 +497,7 @@ static void __rw_shell_cmd(int argc, char *argv[])
     }
 }
 
-void change_prompt( int argc, char *argv[] )
+static void __change_prompt_shcmd( int argc, char *argv[] )
 {
 	int i;
 	unsigned char buffer[ 256 ];
@@ -522,7 +522,7 @@ void change_prompt( int argc, char *argv[] )
 
 int ewx_shell_app_init( void )
 {
-	print_prompt();
+	__print_prompt();
 	return 0;
 }
 
@@ -536,13 +536,14 @@ void ewx_shell_init( void )
 		cmd_list[ i ].name[ 0 ] = 0;
 	}
 
-	ewx_shell_cmd_register( "help", "show all commands", __shell_help_shell_cmd );
-	ewx_shell_cmd_register( "h", "show all commands", __shell_help_shell_cmd );
-	ewx_shell_cmd_register( "reboot", "reboot", __reboot_shell_cmd);
-	ewx_shell_cmd_register( "rr", "read register", __rr_shell_cmd );
-	ewx_shell_cmd_register( "rw", "write register", __rw_shell_cmd );
-	//register_shell_cmd( "prompt", "change prompt", change_prompt );
-    ewx_shell_app_init();
+	ewx_shell_cmd_register( "help", "show all commands", __shell_help_shcmd );
+	ewx_shell_cmd_register( "h", "show all commands", __shell_help_shcmd );
+	ewx_shell_cmd_register( "reboot", "reboot", __reboot_shcmd);
+	ewx_shell_cmd_register( "rr", "read register", __rr_shcmd );
+	ewx_shell_cmd_register( "rw", "write register", __rw_shcmd );
+	//register_shell_cmd("prompt", "change prompt", __change_prompt_shcmd);
+    //ewx_shell_app_init();
+	__print_prompt();
     shell_status = 1;
 }
 

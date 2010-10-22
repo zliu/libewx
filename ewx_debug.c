@@ -40,7 +40,7 @@ int ewx_debug_printd(uint8_t level, int uart_index, const char *format, ... )
     return 0;
 }
 
-static void __ewx_debug_set_debug_level_shell_cmd(int argc, char *argv[])
+static void __set_debug_level_shcmd(int argc, char *argv[])
 {
     int8_t level;
     if (argc == 1) {
@@ -235,10 +235,10 @@ void ewx_debug_work_out()
     cvmx_spinlock_unlock(&ewx_debug_core_status_lock[core_num]);
 }
 
-static int __ewx_debug_core_alive(uint8_t core_num)
+static int __core_alive(uint8_t core_num)
 {
     int i, free = 0;
-    for ( i = 0; i < 100; i ++) {
+    for (i = 0; i < 100; i ++) {
         cvmx_spinlock_lock(&ewx_debug_core_status_lock[core_num]);
         if (ewx_debug_core_status[core_num] == EWX_DEBUG_CORE_FREE) {
             free++;
@@ -258,7 +258,7 @@ int ewx_debug_dump_dead_work()
     int i;
     for (i = 0; i < 32; i++) {
         if ((cvmx_coremask_core(i) & coremask) != 0) {
-            if (!__ewx_debug_core_alive(i)) {
+            if (!__core_alive(i)) {
                 cvmx_dprintf("Core #%u dead\n", i);
                 ewx_debug_dump_work(0, ewx_debug_work_on_core[i]);
             }
@@ -267,7 +267,7 @@ int ewx_debug_dump_dead_work()
     return 0;
 }
 
-static void __ewx_debug_dump_dead_work_shell_cmd(int argc, char *argv[])
+static void __dump_dead_work_shcmd(int argc, char *argv[])
 {
     ewx_debug_dump_dead_work();
 }
@@ -276,8 +276,8 @@ void ewx_debug_init()
 {
     int i;
     if (ewx_shell_status_check() == 1) {
-        ewx_shell_cmd_register("dlevel", "set / query debug level", __ewx_debug_set_debug_level_shell_cmd);
-        ewx_shell_cmd_register("dd", "dump work on dead core", __ewx_debug_dump_dead_work_shell_cmd);
+        ewx_shell_cmd_register("dlevel", "set / query debug level", __set_debug_level_shcmd);
+        ewx_shell_cmd_register("dd", "dump work on dead core", __dump_dead_work_shcmd);
     }
     for (i = 0; i < 32; i++) {
         cvmx_spinlock_init(&ewx_debug_core_status_lock[i]);
