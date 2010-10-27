@@ -8,15 +8,23 @@
  */
 #include "cvmx.h"
 #include "cvmx-spinlock.h"
+#include "cvmx-coremask.h"
 #include "cvmx-wqe.h"
+#include "cvmx-spinlock.h"
 #include "ewx_shell.h"
 
 extern int uart_prints( int uart_index, char *buffer, int len);
 
 static CVMX_SHARED uint8_t debug_level = 0;
 
-int ewx_printd(uint8_t level, int uart_index, const char *format, ... ) __attribute__ ( ( format( printf, 3, 4 ) ) );
-int ewx_printd(uint8_t level, int uart_index, const char *format, ... )
+#define EWX_DEBUG_CORE_FREE         0
+#define EWX_DEBUG_CORE_PROCESSING   1
+static CVMX_SHARED cvmx_wqe_t *ewx_debug_work_on_core[32] = {NULL};
+static CVMX_SHARED uint8_t ewx_debug_core_status[32] = {EWX_DEBUG_CORE_FREE};
+static CVMX_SHARED cvmx_spinlock_t ewx_debug_core_status_lock[32];
+
+int ewx_debug_printd(uint8_t level, int uart_index, const char *format, ... ) __attribute__ ( ( format( printf, 3, 4 ) ) );
+int ewx_debug_printd(uint8_t level, int uart_index, const char *format, ... )
 {
  	char buffer[ 1024 ];
 	va_list args;
@@ -32,7 +40,7 @@ int ewx_printd(uint8_t level, int uart_index, const char *format, ... )
     return 0;
 }
 
-static void set_debug_level_shell_cmd(int argc, char *argv[])
+static void __ewx_debug_set_debug_level_shell_cmd(int argc, char *argv[])
 {
     int8_t level;
     if (argc == 1) {
@@ -55,20 +63,17 @@ uint8_t ewx_debug_level_query()
     return debug_level;
 }
 
-void ewx_debug_init()
-{
-    if (ewx_shell_status_check() == 1) {
-        ewx_shell_cmd_register("dlevel", "set / query debug level", set_debug_level_shell_cmd);
-    }
-}
 
-int ewx_dump_packet(uint8_t level, cvmx_buf_ptr_t  buffer_ptr, uint64_t len)
+int ewx_debug_dump_packet(uint8_t level, cvmx_buf_ptr_t  buffer_ptr, uint64_t len)
 {
     uint32_t        count, print_count;
     uint64_t        remaining_bytes = len;
     uint64_t        start_of_buffer;
     uint8_t *       data_address;
     uint8_t *       end_of_data;
+
+    if (debug_level < level)
+        return 0;
 
     cvmx_dprintf("------ packet_ptr ------\n");
 
@@ -114,7 +119,7 @@ int ewx_dump_packet(uint8_t level, cvmx_buf_ptr_t  buffer_ptr, uint64_t len)
     return 0;
 }
 
-int ewx_dump_work(uint8_t level, cvmx_wqe_t *work)
+int ewx_debug_dump_work(uint8_t level, cvmx_wqe_t *work)
 {
     uint32_t        print_count;
 
@@ -193,7 +198,7 @@ int ewx_dump_work(uint8_t level, cvmx_wqe_t *work)
         cvmx_dprintf("Packet is stored at packet_data array in work\n");
     }
     else {
-        ewx_dump_packet(level, work->packet_ptr, work->len);
+        ewx_debug_dump_packet(level, work->packet_ptr, work->len);
     }
 
     cvmx_dprintf("------ packet_data ------\n");
@@ -211,5 +216,71 @@ int ewx_dump_work(uint8_t level, cvmx_wqe_t *work)
     cvmx_dprintf("\n****** DUMP END ******\n");
     cvmx_dprintf("\n");
     return 0;
+}
+
+void ewx_debug_work_in(cvmx_wqe_t *work)
+{
+    uint8_t core_num = cvmx_get_core_num();
+    ewx_debug_work_on_core[core_num] = work;
+    cvmx_spinlock_lock(&ewx_debug_core_status_lock[core_num]);
+    ewx_debug_core_status[core_num] = EWX_DEBUG_CORE_PROCESSING;
+    cvmx_spinlock_unlock(&ewx_debug_core_status_lock[core_num]);
+}
+
+void ewx_debug_work_out()
+{
+    uint8_t core_num = cvmx_get_core_num();
+    cvmx_spinlock_lock(&ewx_debug_core_status_lock[core_num]);
+    ewx_debug_core_status[core_num] = EWX_DEBUG_CORE_FREE;
+    cvmx_spinlock_unlock(&ewx_debug_core_status_lock[core_num]);
+}
+
+static int __ewx_debug_core_alive(uint8_t core_num)
+{
+    int i, free = 0;
+    for ( i = 0; i < 100; i ++) {
+        cvmx_spinlock_lock(&ewx_debug_core_status_lock[core_num]);
+        if (ewx_debug_core_status[core_num] == EWX_DEBUG_CORE_FREE) {
+            free++;
+        }
+        cvmx_spinlock_unlock(&ewx_debug_core_status_lock[core_num]);
+    }
+    if (free > 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+int ewx_debug_dump_dead_work()
+{
+    uint32_t coremask = cvmx_sysinfo_get()->core_mask;
+    int i;
+    for (i = 0; i < 32; i++) {
+        if ((cvmx_coremask_core(i) & coremask) != 0) {
+            if (!__ewx_debug_core_alive(i)) {
+                cvmx_dprintf("Core #%u dead\n", i);
+                ewx_debug_dump_work(0, ewx_debug_work_on_core[i]);
+            }
+        }
+    }
+    return 0;
+}
+
+static void __ewx_debug_dump_dead_work_shell_cmd(int argc, char *argv[])
+{
+    ewx_debug_dump_dead_work();
+}
+
+void ewx_debug_init()
+{
+    int i;
+    if (ewx_shell_status_check() == 1) {
+        ewx_shell_cmd_register("dlevel", "set / query debug level", __ewx_debug_set_debug_level_shell_cmd);
+        ewx_shell_cmd_register("dd", "dump work on dead core", __ewx_debug_dump_dead_work_shell_cmd);
+    }
+    for (i = 0; i < 32; i++) {
+        cvmx_spinlock_init(&ewx_debug_core_status_lock[i]);
+    }
 }
 
