@@ -552,4 +552,36 @@ uint8_t ewx_shell_status_check()
     return shell_status;
 }
 
+void ewx_shell_main_loop( void )
+{
+    uint64_t tmp_tick_count;
+    uint64_t current_cycle;
+    cvmx_sysinfo_t * sysinfo = cvmx_sysinfo_get();
 
+    uint64_t cpu_hz = sysinfo->cpu_clock_hz;
+
+    uint64_t us_tick_cycles = cpu_hz / 1000000;
+    uint64_t ms_tick_cycles = cpu_hz / 1000;
+    uint64_t sec_tick_cycles = cpu_hz;
+    uint64_t us_tick_count = 0;
+    uint64_t ms_tick_count = 0;
+    uint64_t sec_tick_count = 0;
+
+    while ( 1 )
+    {
+        current_cycle = cvmx_get_cycle();
+        tmp_tick_count = current_cycle / us_tick_cycles;
+        if ( tmp_tick_count > us_tick_count ) {
+            us_tick_count = tmp_tick_count;
+        }
+        tmp_tick_count = current_cycle / ms_tick_cycles;
+        if ( tmp_tick_count > ms_tick_count ) {
+            ms_tick_count = tmp_tick_count;
+            ewx_shell_run();
+        }
+        tmp_tick_count = current_cycle / sec_tick_cycles;
+        if ( tmp_tick_count > sec_tick_count ) {
+            sec_tick_count = tmp_tick_count;
+        }
+    }
+}
