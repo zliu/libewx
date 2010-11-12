@@ -145,9 +145,7 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 			data = (void *)(current + 1);/*数据开头紧跟着bucket头之后*/
 			if (compare != NULL) {
 				for (i=0; i<current->valid_count; i++) {
-					if (compare(this, user_data, data) != 0) {
-						continue;
-					} else {
+					if (compare(this, user_data, data) == 0) {
 						/*调用用户自己的添加函数*/
 						if (insert != NULL) {
 							result = insert(this, user_data, data);

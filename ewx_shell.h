@@ -54,9 +54,11 @@ void ewx_shell_init( void );
  *
  * @return 0，初始化成功；1，初始化失败
  */
-int ewx_shell_app_init( void );
+int ewx_shell_app_init(void);
 
 uint8_t ewx_shell_status_check();
+
+void ewx_shell_main_loop(void);
 
 #endif
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <stdarg.h>
 
@@ -134,7 +135,7 @@ int ewx_shell_cmd_unregister( const char *name )
     return 0;
 }
 
-static void execute_cmd( char *buf )
+static void __execute_cmd( char *buf )
 {
     const char *delim = " \t";
     int argc = 0, i = 0;
@@ -178,7 +179,7 @@ static void execute_cmd( char *buf )
     ( cmd_list[ i ].func )( argc, argv );
 }
 
-void print_prompt( void )
+static void __print_prompt( void )
 {
     printf( prompt );
     fflush( stdout );
@@ -208,12 +209,12 @@ void ewx_shell_run( void )
 					if ( shell_cmd_buf[ 0 ] != 0 )
 					{
 						strcpy( shell_cmd_buf_tmp, shell_cmd_buf );
-						execute_cmd( shell_cmd_buf_tmp );
+						__execute_cmd( shell_cmd_buf_tmp );
 						browsing_history = 0;
 						if ( ( valid_history_entry > 0 ) &&
 							( strcmp( history_shell_cmd[ last_history_index ], shell_cmd_buf ) == 0 ) )
 						{
-							print_prompt();
+							__print_prompt();
 							break;
 						}
 						if ( valid_history_entry < MAX_HISTORY_CMDS )
@@ -228,7 +229,7 @@ void ewx_shell_run( void )
 						}
 						strcpy( history_shell_cmd[ last_history_index ], shell_cmd_buf );
 					}
-					print_prompt();
+					__print_prompt();
 					fflush( stdout );
 					break;
 				case TAB:
@@ -241,8 +242,16 @@ void ewx_shell_run( void )
 					shell_cmd_buf[ shell_cmd_index ] = 0;
 					shell_cmd_index = 0;
 					printf( "\n" );
-					print_prompt();
+					__print_prompt();
 					fflush( stdout );
+					break;
+                case CTRL_U:
+                    while (shell_cmd_index > 0) {
+						shell_cmd_index--;
+                        shell_cmd_buf[ shell_cmd_index ] = 0;
+						printf( "\b \b" );
+						fflush( stdout );
+                    }
 					break;
 				case BS:
 				case DEL:
@@ -340,7 +349,7 @@ __attribute__( ( noreturn ) ) void shell( void )
     int ch;
     int i = 0;
 
-    print_prompt();
+    __print_prompt();
     while ( 1 ) {
         ch = getchar_nowait();
         if ( ch == -1 ) {
@@ -354,10 +363,10 @@ __attribute__( ( noreturn ) ) void shell( void )
         if ( ch == '\n' ) {
             shell_cmd_buf[ i - 1 ] = 0;
             if ( shell_cmd_buf[ 0 ] != 0 ) {
-                execute_cmd( shell_cmd_buf );
+                __execute_cmd( shell_cmd_buf );
             }
             i = 0;
-            print_prompt();
+            __print_prompt();
         } else if ( ch == DEL ) {
             if (i != 0 ) {
                 i--;
@@ -368,7 +377,7 @@ __attribute__( ( noreturn ) ) void shell( void )
     }
 }
 
-void shell_help( int argc, char *argv[] )
+void __shell_help_shcmd( int argc, char *argv[] )
 {
 	int i;
 	//int ch;
@@ -396,7 +405,99 @@ void shell_help( int argc, char *argv[] )
 	}
 }
 
-void change_prompt( int argc, char *argv[] )
+static void __reboot_shcmd(int argc, char *argv[])
+{
+    cvmx_write_csr(CVMX_CIU_SOFT_RST, 1ull);
+}
+
+static void __rr_shcmd(int argc, char *argv[])
+{
+    uint64_t addr;
+    uint64_t val;
+    char *endptr;
+    uint8_t low_bit, high_bit;
+
+    if ((argc == 2) || (argc == 3)) {
+        errno = 0;
+        addr = strtoull(argv[1], 0, 16);
+        if ( errno != 0 ) {
+            printf("Err: Error reg address.\n");
+            return;
+        }
+        if (argc == 3) {
+            high_bit = (uint8_t)strtoull(argv[2], &endptr, 10);
+            if ((*endptr != ':') || (high_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+            low_bit = (uint8_t)strtoull(endptr + 1, &endptr, 10);
+            if ((high_bit < low_bit) || (low_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+            val = (cvmx_read_csr(CVMX_ADD_IO_SEG(addr)) >> low_bit)
+                  & (((uint64_t)1 << (high_bit - low_bit) << 1) - 1 );
+        } else {
+            val = cvmx_read_csr(CVMX_ADD_IO_SEG(addr));
+        }
+        printf("    0x%016llx\n", (uint64_t)val);
+    } else if (argc == 0) {
+        printf("Usage: rr ADDRESS [HIGH-BIT:LOW-BIT]");
+    } else {
+        printf("Err: Error parameter.\n");
+    }
+}
+
+static void __rw_shcmd(int argc, char *argv[])
+{
+    uint64_t addr;
+    uint64_t val;
+    char *endptr;
+    uint8_t low_bit = 0, high_bit = 0;
+
+    if ((argc == 3) || (argc == 4)) {
+        errno = 0;
+        addr = strtoull(argv[1], 0, 16);
+        if (errno != 0) {
+            printf( "Err: Error reg address.\n" );
+            return;
+        }
+        if (argc == 4) {
+            high_bit = (uint8_t)strtoull(argv[2], &endptr, 10);
+            if ((*endptr != ':') || (high_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+            low_bit = (uint8_t)strtoull(endptr + 1, &endptr, 10);
+            if ((high_bit < low_bit) || (low_bit > 63)) {
+                printf("Err: Error bit position.\n");
+                return;
+            }
+
+            val = strtoull( argv[3], 0, 16 );
+            if ( errno != 0 ) {
+                printf("Err: Error reg value.\n");
+                return;
+            }
+            val = (cvmx_read_csr(CVMX_ADD_IO_SEG(addr))
+                   & ((((~(uint64_t)0 >> (high_bit) >> 1 << (high_bit - low_bit) << 1) + 1) << low_bit) - 1))
+                  | (val << low_bit);
+        } else {
+            val = strtoull( argv[2], 0, 16 );
+            if ( errno != 0 ) {
+                printf("Err: Error reg value.\n");
+                return;
+            }
+        }
+        cvmx_write_csr(CVMX_ADD_IO_SEG(addr), val);
+    } else if (argc == 0) {
+        printf("Usage: rw ADDRESS [HIGH-BIT:LOW-BIT] VALUE");
+    } else {
+        printf("Err: Error parameter.\n");
+    }
+}
+
+static void __change_prompt_shcmd( int argc, char *argv[] )
 {
 	int i;
 	unsigned char buffer[ 256 ];
@@ -421,7 +522,7 @@ void change_prompt( int argc, char *argv[] )
 
 int ewx_shell_app_init( void )
 {
-	print_prompt();
+	__print_prompt();
 	return 0;
 }
 
@@ -435,10 +536,14 @@ void ewx_shell_init( void )
 		cmd_list[ i ].name[ 0 ] = 0;
 	}
 
-	ewx_shell_cmd_register( "help", "show all commands", shell_help );
-	ewx_shell_cmd_register( "h", "show all commands", shell_help );
-	//register_shell_cmd( "prompt", "change prompt", change_prompt );
-    ewx_shell_app_init();
+	ewx_shell_cmd_register( "help", "show all commands", __shell_help_shcmd );
+	ewx_shell_cmd_register( "h", "show all commands", __shell_help_shcmd );
+	ewx_shell_cmd_register( "reboot", "reboot", __reboot_shcmd);
+	ewx_shell_cmd_register( "rr", "read register", __rr_shcmd );
+	ewx_shell_cmd_register( "rw", "write register", __rw_shcmd );
+	//register_shell_cmd("prompt", "change prompt", __change_prompt_shcmd);
+    //ewx_shell_app_init();
+	__print_prompt();
     shell_status = 1;
 }
 
@@ -447,4 +552,36 @@ uint8_t ewx_shell_status_check()
     return shell_status;
 }
 
+void ewx_shell_main_loop( void )
+{
+    uint64_t tmp_tick_count;
+    uint64_t current_cycle;
+    cvmx_sysinfo_t * sysinfo = cvmx_sysinfo_get();
 
+    uint64_t cpu_hz = sysinfo->cpu_clock_hz;
+
+    uint64_t us_tick_cycles = cpu_hz / 1000000;
+    uint64_t ms_tick_cycles = cpu_hz / 1000;
+    uint64_t sec_tick_cycles = cpu_hz;
+    uint64_t us_tick_count = 0;
+    uint64_t ms_tick_count = 0;
+    uint64_t sec_tick_count = 0;
+
+    while ( 1 )
+    {
+        current_cycle = cvmx_get_cycle();
+        tmp_tick_count = current_cycle / us_tick_cycles;
+        if ( tmp_tick_count > us_tick_count ) {
+            us_tick_count = tmp_tick_count;
+        }
+        tmp_tick_count = current_cycle / ms_tick_cycles;
+        if ( tmp_tick_count > ms_tick_count ) {
+            ms_tick_count = tmp_tick_count;
+            ewx_shell_run();
+        }
+        tmp_tick_count = current_cycle / sec_tick_cycles;
+        if ( tmp_tick_count > sec_tick_count ) {
+            sec_tick_count = tmp_tick_count;
+        }
+    }
+}

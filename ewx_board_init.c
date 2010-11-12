@@ -65,7 +65,7 @@ static int __application_init_simple_exec(int num_packet_buffers)
     if (!cvmx_octeon_is_pass1())
     {
         /* Leave 16 bytes space for the ethernet header */
-        cvmx_write_csr(CVMX_PIP_IP_OFFSET, 2);
+        cvmx_write_csr(CVMX_PIP_IP_OFFSET, 3);
         int port, interface;
         /* Enable storing short packets only in the WQE */
         for (interface = 0; interface < 2; interface++)
@@ -144,10 +144,6 @@ int ewx_board_init()
         if (!ewx_board_valid()) {
             return 0;
         }
-#if EWX_DEBUG_ENABLE
-        ewx_uart_init();
-        ewx_shell_init();
-#endif
 		if (!(coremask_se & 1)) {
 			/*there is another SE or linux, so we skip the io_global init, just as linux-filter*/
             single_se_running = 0;

@@ -59,7 +59,10 @@ LIB_COMMON_OBJS  :=  \
 	$(OBJ_DIR)/ewx_log.o	\
 	$(OBJ_DIR)/ewx_thread.o	\
 	$(OBJ_DIR)/ewx_debug.o \
-	$(OBJ_DIR)/ewx_board_check.o
+	$(OBJ_DIR)/ewx_board_check.o \
+	$(OBJ_DIR)/ewx_forward.o \
+	$(OBJ_DIR)/ewx_helper_util.o \
+	$(OBJ_DIR)/ewx_block.o
 
 OBJS_$(d) := $(LIB_COMMON_OBJS)
 
