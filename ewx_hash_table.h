@@ -59,6 +59,7 @@ typedef int32_t (*ewx_hash_table_compare_handle_t)(void *this, void *user_data, 
  */
 typedef int32_t (*ewx_hash_table_insert_handle_t)(void *this, void *user_data, void *table_item);
 
+typedef int32_t (*ewx_hash_table_update_handle_t)(void *this, void *user_data, void *table_item);
 /**
  * bucket分配回调函数，当一个bucket满的时候，需要通过该回调分配空间
  *
@@ -149,6 +150,13 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
 int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p, ewx_hash_table_compare_handle_t compare,
 							  void *this, void *user_data, ewx_hash_table_insert_handle_t insert,
 							  ewx_hash_table_bucket_alloc_handle_t bucket_alloc);
+
+int32_t ewx_hash_table_insert2(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p,
+                               ewx_hash_table_compare_handle_t compare,
+							  void *this, void *user_data, ewx_hash_table_insert_handle_t update,
+                              ewx_hash_table_insert_handle_t insert,
+							  ewx_hash_table_bucket_alloc_handle_t bucket_alloc);
+
 
 /**
  * hash表节点删除函数
