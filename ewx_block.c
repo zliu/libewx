@@ -90,10 +90,8 @@ T* ewx_blk_new(uint32_t capacity, uint16_t elem_size, char *name)
         printf("Err: elem size cannot be aligned");
 		return NULL;
 	}
-    printf("size = %lu, elem_size = %d, name = %s\n", sizeof(T) + (uint64_t)capacity * elem_size, elem_size, name);
-
     if (name != NULL) {
-        ptr = cvmx_bootmem_alloc_named(sizeof(T) + (uint64_t)capacity * elem_size, elem_size, name);
+        ptr = cvmx_bootmem_alloc_named(sizeof(T) + (uint64_t)capacity * elem_size + capacity, elem_size, name);
         if (ptr == NULL) {
             printf("Err: Failed to alloc memory\n");
             return NULL;
