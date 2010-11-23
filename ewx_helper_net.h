@@ -9,6 +9,12 @@ typedef struct ewx_l2_header_s {
     uint8_t     payload[0];
 } ewx_l2_hdr_t;
 
+#define EWX_L2_TYPE_IP      0x0800
+#define EWX_L2_TYPE_ARP     0x0806
+#define EWX_L2_TYPE_RARP    0x8035
+#define EWX_L2_TYPE_VLAN    0x8100
+#define EWX_L2_TYPE_IPv6    0x86DD
+
 typedef struct ewx_vlan_s {
     uint16_t    priority    : 3;
     uint16_t    cfi         : 1;
