@@ -9,7 +9,7 @@ typedef int32_t (*ewx_blk_show_handler_t)(void *this, uint32_t addr);
 
 extern void* ewx_blk(T* block, uint32_t addr);
 extern T* ewx_blk_new(uint32_t capacity, uint16_t elem_size, char* name);
-extern void ewx_blk_empty(T* block);
+extern int ewx_blk_empty(T* block);
 extern int ewx_blk_alloc(T* block);
 extern int ewx_blk_free(T* block, uint32_t addr);
 extern void ewx_blk_destroy(T* block);
