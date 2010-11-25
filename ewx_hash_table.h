@@ -47,19 +47,30 @@ typedef int32_t (*ewx_hash_table_compare_handle_t)(void *this, void *user_data, 
 
 
 /**
- * hash表插入节点回调函数，常用在hash插入时，视情况而定插入节点的场合(比如有的场合下，搜索是否有一个特征匹配的节点，如果有就修改该节点，
- * 否则，便插入一个新节点)
+ * hash表插入节点回调函数，常用在hash插入时，视情况而定插入/更新节点的场合(比如有的场合下，搜索是否有一个特征匹配的节点，如
+ * 果有就修改该节点，否则，便插入一个新节点)
  *
  * @param this 当前节点
  * @param user_data 用户的数据
  * @param table_item hash表中的节点
- * @return > 0 表示通过该回调已经成功插入，不需要再插入新节点；
- *  return == 0 表示插入函数成功插入，但仍需要插入新节点;
- *  return < 0 表示插入失败，不会插入新节点，直接返回；
+ * @return >= 0 表示通过该回调已经成功插入;
+ *  return < 0 表示插入失败，不会插入新节点，直接返回;
  */
 typedef int32_t (*ewx_hash_table_insert_handle_t)(void *this, void *user_data, void *table_item);
 
+/**
+ * hash表更新节点回调函数，常用在hash插入时，视情况而定插入/更新节点的场合(比如有的场合下，搜索是否有一个特征匹配的节点，如
+ * 果有就修改该节点，否则，便插入一个新节点)
+ *
+ * @param this 当前节点
+ * @param user_data 用户的数据
+ * @param table_item hash表中的节点
+ * @return > 0 表示通过该回调已经成功更新，不需要再插入新节点；
+ *  return == 0 表示插入函数成功更新，但仍需要插入新节点;
+ *  return < 0 表示更新失败，不会插入新节点，直接返回；
+ */
 typedef int32_t (*ewx_hash_table_update_handle_t)(void *this, void *user_data, void *table_item);
+
 /**
  * bucket分配回调函数，当一个bucket满的时候，需要通过该回调分配空间
  *
@@ -142,13 +153,13 @@ void *ewx_hash_table_search(ewx_hash_table_t *hash_table_p, uint32_t hash, ewx_h
  * @param compare 可选的节点匹配回调函数
  * @param this 可选的当前搜索的节点
  * @param user_data 可选的用户数据，在某些情况下，除了节点数据外，可能还需要额外的用户数据用来进行匹配
- * @param insert 可选的节点插入回调函数
+ * @param update 可选的节点更新回调函数
  * @param bucket_alloc 可选的bucket分配回调函数，如果该回调为NULL，那么bucket将不能往后链
  *
  * @return 0，插入成功；否则，插入失败
  */
 int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p, ewx_hash_table_compare_handle_t compare,
-							  void *this, void *user_data, ewx_hash_table_insert_handle_t insert,
+							  void *this, void *user_data, ewx_hash_table_update_handle_t update,
 							  ewx_hash_table_bucket_alloc_handle_t bucket_alloc);
 
 int32_t ewx_hash_table_insert2(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p,

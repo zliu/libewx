@@ -149,7 +149,7 @@ int32_t ewx_hash_table_insert2(ewx_hash_table_t *hash_table_p, uint32_t hash, vo
 				for (i=0; i<current->valid_count; i++) {
 					if (compare(this, user_data, data) == 0) {
 						/*调用用户自己的添加函数*/
-						if (insert != NULL) {
+						if (update != NULL) {
 							result = update(this, user_data, data);
 							if (result != 0 ) {
 								/*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
@@ -177,14 +177,14 @@ int32_t ewx_hash_table_insert2(ewx_hash_table_t *hash_table_p, uint32_t hash, vo
 		/*if free_pos_p != NULL*/
 		/*调用用户自己的添加函数*/
 		data = free_pos_p;
-		if (insert != NULL) {
-			result = insert(this, user_data, data);
+		if (update != NULL) {
+			result = update(this, user_data, data);
 			if (result != 0 ) {
 				/*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
 				goto end;
 			}
 		}
-		/*如果insert返回为0，那么仍旧插入新节点*/
+		/*如果update返回为0，那么仍旧插入新节点*/
 		current->valid_count++;
 	}
 
@@ -202,10 +202,11 @@ int32_t ewx_hash_table_insert2(ewx_hash_table_t *hash_table_p, uint32_t hash, vo
 		current->next_offset = 0;
 		current->valid_count = 1;
 		free_pos_p = (void *)(current+1);
+        data = free_pos_p;
 	}
     memcpy(free_pos_p, this, hash_table_p->item_size);
     result = insert(this, user_data, data);
-    if (result != 0 ) {
+    if (result != 0) {
         /*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
         goto end;
     }
@@ -218,7 +219,7 @@ end:
 
 
 int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, void *free_pos_p, ewx_hash_table_compare_handle_t compare,
-							  void *this, void *user_data, ewx_hash_table_insert_handle_t insert,
+							  void *this, void *user_data, ewx_hash_table_update_handle_t update,
 							  ewx_hash_table_bucket_alloc_handle_t bucket_alloc)
 {
     if (!ewx_board_valid()) {
@@ -248,8 +249,8 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 				for (i=0; i<current->valid_count; i++) {
 					if (compare(this, user_data, data) == 0) {
 						/*调用用户自己的添加函数*/
-						if (insert != NULL) {
-							result = insert(this, user_data, data);
+						if (update != NULL) {
+							result = update(this, user_data, data);
 							if (result != 0 ) {
 								/*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
 								goto end;
@@ -276,14 +277,14 @@ int32_t ewx_hash_table_insert(ewx_hash_table_t *hash_table_p, uint32_t hash, voi
 		/*if free_pos_p != NULL*/
 		/*调用用户自己的添加函数*/
 		data = free_pos_p;
-		if (insert != NULL) {
-			result = insert(this, user_data, data);
+		if (update != NULL) {
+			result = update(this, user_data, data);
 			if (result != 0 ) {
 				/*添加完成( > 0 )，或者添加失败( < 0 )，返回*/
 				goto end;
 			}
 		}
-		/*如果insert返回为0，那么仍旧插入新节点*/
+		/*如果update返回为0，那么仍旧插入新节点*/
 		current->valid_count++;
 	}
 
