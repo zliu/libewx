@@ -4,8 +4,12 @@ static CVMX_SHARED uint8_t board_valid= 0;
 
 #define KEY_LEN 24
 static const unsigned char key[KEY_LEN]="EmbedWay Technology Inc.";
+#ifndef CHECK_ENABLE
+#define CHECK_ENABLE 1
+#endif
 
 int ewx_board_check() {
+#if CHECK_ENABLE
     uint16_t i, len;
     uint64_t data;
     uint8_t buffer[512]={0};
@@ -43,6 +47,7 @@ int ewx_board_check() {
             return 0;
         }
     }
+#endif
     board_valid = 1;
     return 0;
 }
