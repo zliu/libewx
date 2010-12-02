@@ -76,4 +76,6 @@ typedef struct ewx_tcp_header_s {
     uint8_t     payload[0];
 } ewx_tcp_hdr_t;
 
+void ewx_ip_checksum(ewx_ip_hdr_t *ip_head);
+
 #endif
