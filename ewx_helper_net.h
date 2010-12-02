@@ -54,6 +54,9 @@ typedef struct ewx_ip_header_s {
     uint8_t     payload[0];
 } ewx_ip_hdr_t;
 
+#define EWX_IP_PROTOCOL_TCP 6
+#define EWX_IP_PROTOCOL_UDP 17
+
 typedef struct ewx_udp_header_s {
     uint16_t    src;
     uint16_t    dst;
