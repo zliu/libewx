@@ -15,7 +15,7 @@
 //#include "cvmx-pow.h"
 //#include "cvmx-gmx.h"
 //#include "cvmx-asx.h"
-//#include "cvmx-sysinfo.h"
+#include "cvmx-sysinfo.h"
 //#include "cvmx-coremask.h"
 //#include "cvmx-bootmem.h"
 //#include "cvmx-helper.h"
@@ -78,6 +78,8 @@ static CVMX_SHARED uint8_t shell_status = 0;    // 0 stands for not loaded; 1 st
                                                 // UnFixed: 状态最好用enum类型表示
 #define DEFAULT_PROMPT "PASH # "
 char prompt[ 32 ];
+
+static CVMX_SHARED uint64_t cpu_hz;
 
 int ewx_shell_cmd_register( const char *name, const char *comment, void ( *func )( int, char *[] ) )
 {
@@ -532,6 +534,15 @@ static void __ewxinfo_shcmd(int argc, char *argv[])
     }
 }
 
+static void __runtime_shcmd(int argc, char *argv[])
+{
+    if (argc != 1) {
+        printf("Usage: runtime\n");
+    } else {
+        printf("System run time : %fs\n", (float)(uint64_t)(cvmx_get_cycle() / cpu_hz * 100) / 100);
+    }
+}
+
 int ewx_shell_app_init( void )
 {
 	__print_prompt();
@@ -548,12 +559,14 @@ void ewx_shell_init( void )
 		cmd_list[ i ].name[ 0 ] = 0;
 	}
 
+    cpu_hz = cvmx_sysinfo_get()->cpu_clock_hz;
 	ewx_shell_cmd_register( "help", "show all commands", __shell_help_shcmd );
 	ewx_shell_cmd_register( "h", "show all commands", __shell_help_shcmd );
-	ewx_shell_cmd_register( "reboot", "reboot", __reboot_shcmd);
+	ewx_shell_cmd_register( "reboot", "reboot", __reboot_shcmd );
 	ewx_shell_cmd_register( "rr", "read register", __rr_shcmd );
 	ewx_shell_cmd_register( "rw", "write register", __rw_shcmd );
 	ewx_shell_cmd_register( "ewxinfo", "show ewx info", __ewxinfo_shcmd );
+    ewx_shell_cmd_register( "runtime", "system run time", __runtime_shcmd );
 	//register_shell_cmd("prompt", "change prompt", __change_prompt_shcmd);
     //ewx_shell_app_init();
 	__print_prompt();
