@@ -57,6 +57,70 @@ int32_t ewx_pool_resize(uint32_t pool, uint32_t block_size, uint32_t new_size)
 	return 0;
 }
 
+int32_t ewx_pool_resize2(uint32_t pool, uint32_t block_size, uint32_t new_block)
+{
+    uint32_t old_block = cvmx_read_csr(CVMX_FPA_QUEX_AVAILABLE(pool));
+	void *memory;
+	char *ptr;
+    uint32_t num_block;
+
+	//printf("old_size=%llu, new_size=%llu\n", old_size, new_size);
+	if(old_block >= new_block)
+		return 0;
+	else {
+		num_block = new_block - old_block;
+		memory = cvmx_bootmem_alloc((uint64_t)num_block * block_size, CVMX_CACHE_LINE_SIZE);
+		if (memory == NULL) {
+			return -EWX_NO_SPACE_ERROR;
+		}
+		ptr = (char*)memory;
+		while (num_block--) {
+			cvmx_fpa_free(ptr, pool, 0);
+        	ptr += block_size;
+		}
+	}
+	return 0;
+}
+
+int32_t ewx_pool_enlarge(uint32_t pool, uint32_t block_size, uint32_t new_size)
+{
+	new_size = (uint64_t)new_size * 1024 * 1024;
+	void *memory;
+	char *ptr;
+	int new_block;
+
+	//printf("old_size=%llu, new_size=%llu\n", old_size, new_size);
+    new_block = (new_size + block_size - 1) / (block_size);
+    memory = cvmx_bootmem_alloc(new_block * block_size, CVMX_CACHE_LINE_SIZE);
+    if (memory == NULL) {
+        return -EWX_NO_SPACE_ERROR;
+    }
+    ptr = (char*)memory;
+    while (new_block--) {
+        cvmx_fpa_free(ptr, pool, 0);
+        ptr += block_size;
+    }
+	return 0;
+}
+
+int32_t ewx_pool_enlarge2(uint32_t pool, uint32_t block_size, uint32_t new_block)
+{
+	void *memory;
+	char *ptr;
+
+	//printf("old_size=%llu, new_size=%llu\n", old_size, new_size);
+    memory = cvmx_bootmem_alloc((uint64_t)new_block * block_size, CVMX_CACHE_LINE_SIZE);
+    if (memory == NULL) {
+        return -EWX_NO_SPACE_ERROR;
+    }
+    ptr = (char*)memory;
+    while (new_block--) {
+        cvmx_fpa_free(ptr, pool, 0);
+        ptr += block_size;
+    }
+	return 0;
+}
+
 /*通用堆栈操作函数*/
 cvmx_zone_t ewx_zone_init(uint8_t *zone_name, uint32_t block_size, uint32_t zone_size)
 {
