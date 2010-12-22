@@ -22,6 +22,8 @@
 
 #include "ewx_shell.h"
 #include "ewx_uart.h"
+#include "ewx_version.h"
+
 // VT102 emulation
 #define DEL		0x7f
 #define BEL		0x07
@@ -520,6 +522,16 @@ static void __change_prompt_shcmd( int argc, char *argv[] )
 	strncpy( prompt, (char *)buffer, 32 );
 }
 
+static void __ewxinfo_shcmd(int argc, char *argv[])
+{
+    if (argc != 1) {
+        printf("Usage: ewxinfo\n");
+    } else {
+        printf("EWX Library %s %s\n", _SOFTWARE_VERSION_, _CURRENT_BUILD_);
+        printf("Copyright(c) 2010 Embedway\n");
+    }
+}
+
 int ewx_shell_app_init( void )
 {
 	__print_prompt();
@@ -541,6 +553,7 @@ void ewx_shell_init( void )
 	ewx_shell_cmd_register( "reboot", "reboot", __reboot_shcmd);
 	ewx_shell_cmd_register( "rr", "read register", __rr_shcmd );
 	ewx_shell_cmd_register( "rw", "write register", __rw_shcmd );
+	ewx_shell_cmd_register( "ewxinfo", "show ewx info", __ewxinfo_shcmd );
 	//register_shell_cmd("prompt", "change prompt", __change_prompt_shcmd);
     //ewx_shell_app_init();
 	__print_prompt();
