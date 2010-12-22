@@ -17,7 +17,7 @@
 
 extern int uart_prints( int uart_index, char *buffer, int len);
 
-static CVMX_SHARED uint8_t debug_level = 0;
+static CVMX_SHARED uint8_t debug_level = 1;
 
 #define EWX_DEBUG_CORE_FREE         0
 #define EWX_DEBUG_CORE_PROCESSING   1
