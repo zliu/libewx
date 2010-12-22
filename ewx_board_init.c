@@ -59,7 +59,7 @@ static int __application_init_simple_exec(int num_packet_buffers)
     }
 
     int result = cvmx_helper_initialize_packet_io_global();
-    __init_default_ipd_group_mask(TO_LINUX_GROUP);
+    __init_default_ipd_group_mask(FROM_INPUT_PORT_GROUP);
     cvmx_helper_ipd_and_packet_input_enable();
 
     if (!cvmx_octeon_is_pass1())
@@ -181,7 +181,7 @@ int ewx_board_init()
     if (!single_se_running) {
         cvmx_pow_set_group_mask(cvmx_get_core_num(), (1<<FROM_LINUX_GROUP) | (1<<FROM_INPUT_PORT_GROUP));
     } else {
-        cvmx_pow_set_group_mask(cvmx_get_core_num(), 1<<TO_LINUX_GROUP);
+        cvmx_pow_set_group_mask(cvmx_get_core_num(), 1<<FROM_INPUT_PORT_GROUP);
     }
     if (cvmx_coremask_first_core(coremask_se)) {
         printf("Done initializing board.\n");
