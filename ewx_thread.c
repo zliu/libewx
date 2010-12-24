@@ -31,6 +31,7 @@ int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t q
 	p->fn = fn;
 	p->param = (void *)p+sizeof(ewx_thread_t);
 	p->free = 1;
+	p->ignore = 0;
 	p->tick = 0;
 
 	memcpy(p->param, param, param_len);
@@ -40,21 +41,35 @@ int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t q
 	return 0;
 }
 
-int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn,
-								void *param, uint32_t param_len, uint16_t tick)
+int ewx_timer_drop(cvmx_wqe_t *wqe_p)
+{
+    int32_t result = 0;
+    ewx_thread_t *p = (ewx_thread_t *)wqe_p->packet_data;
+    result = cvmx_tim_delete_entry(&p->delete_info);
+    if (result != 0) {
+        p->ignore = 1;
+        p->free = 1;
+    }
+    return 0;
+}
+
+cvmx_wqe_t * ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn,
+                              void *param, uint32_t param_len, uint16_t tick)
 {
 	cvmx_wqe_t *wqe_p;
 	ewx_thread_t *p;
 	int32_t result = 0;
 
 	if (grp >= 16 || param_len > 96-sizeof(ewx_thread_t)) {
-		return -EWX_PARAM_ERROR;
+        return NULL;
+//		return -EWX_PARAM_ERROR;
 	}
 
 	wqe_p = cvmx_fpa_alloc(CVMX_FPA_WQE_POOL);
 
 	if (wqe_p == NULL) {
-		return -EWX_NO_SPACE_ERROR;
+        return NULL;
+//		return -EWX_NO_SPACE_ERROR;
 	}
 
 	memset(wqe_p, 0, sizeof(cvmx_wqe_t));
@@ -69,6 +84,7 @@ int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qo
 	p->fn = fn;
 	p->param = (void *)p+sizeof(ewx_thread_t);
 	p->free = 0;
+	p->ignore = 0;
 	p->tick = tick;
 
 	memcpy(p->param, param, param_len);
@@ -76,9 +92,11 @@ int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qo
 	if (tick == 0) {
 		cvmx_pow_work_submit(wqe_p, wqe_p->tag, wqe_p->tag_type, wqe_p->qos, wqe_p->grp);
 	} else {
-		result = cvmx_tim_add_entry(wqe_p, p->tick, NULL);
+		result = cvmx_tim_add_entry(wqe_p, p->tick, &p->delete_info);
+        if (result != CVMX_TIM_STATUS_SUCCESS)
+            return NULL;
 	}
-	return result;
+	return wqe_p;
 
 }
 
@@ -91,9 +109,11 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
 		return EWX_NOT_TIM_WQE;
 	}
 
-	if (p->fn != NULL) {
-		p->fn(p, p->param);
-	}
+    if (!p->ignore) {
+        if (p->fn != NULL) {
+            p->fn(p, p->param);
+        }
+    }
 
 	if (p->free) {
 		//cvmx_helper_free_packet_data(wqe_p);
@@ -104,7 +124,7 @@ int32_t ewx_thread_process(cvmx_wqe_t *wqe_p)
 			cvmx_pow_desched(0);
 		} else {
             /*printf("re add timer tick:[[%d]]\n", p->tick);*/
-			cvmx_tim_add_entry(wqe_p, p->tick, NULL);
+			cvmx_tim_add_entry(wqe_p, p->tick, &p->delete_info);
 		}
 	}
 	return 0;
