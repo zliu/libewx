@@ -17,7 +17,7 @@
 //#include "cvmx-asx.h"
 #include "cvmx-sysinfo.h"
 //#include "cvmx-coremask.h"
-//#include "cvmx-bootmem.h"
+#include "cvmx-bootmem.h"
 //#include "cvmx-helper.h"
 
 #include "ewx_shell.h"
@@ -539,7 +539,9 @@ static void __runtime_shcmd(int argc, char *argv[])
     if (argc != 1) {
         printf("Usage: runtime\n");
     } else {
-        printf("System run time : %fs\n", (float)(uint64_t)(cvmx_get_cycle() / cpu_hz * 100) / 100);
+        printf("System run time : %.2fs\n", (float)cvmx_get_cycle() / cpu_hz);
+        uint64_t free_mem_size = cvmx_bootmem_available_mem(1);
+        printf("Memory Usage : %.2fMB(%luB)\n", (float)free_mem_size / 1024 / 1024, free_mem_size);
     }
 }
 
@@ -566,7 +568,7 @@ void ewx_shell_init( void )
 	ewx_shell_cmd_register( "rr", "read register", __rr_shcmd );
 	ewx_shell_cmd_register( "rw", "write register", __rw_shcmd );
 	ewx_shell_cmd_register( "ewxinfo", "show ewx info", __ewxinfo_shcmd );
-    ewx_shell_cmd_register( "runtime", "system run time", __runtime_shcmd );
+    ewx_shell_cmd_register( "runtime", "system runtime status", __runtime_shcmd );
 	//register_shell_cmd("prompt", "change prompt", __change_prompt_shcmd);
     //ewx_shell_app_init();
 	__print_prompt();
