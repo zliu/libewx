@@ -1,6 +1,7 @@
 #ifndef __EWX_HELPER_NET_H__
 #define __EWX_HELPER_NET_H__
 
+#define MAC_TO_U64(x) (((uint64_t)*(uint32_t *)(x) << 16) + (uint64_t)*(uint16_t*)((uint32_t *)(x) + 1))
 
 typedef struct ewx_l2_header_s {
     uint8_t     dst[6];
