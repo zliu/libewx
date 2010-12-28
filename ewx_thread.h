@@ -6,6 +6,7 @@
 
 #include "cvmx.h"
 #include "cvmx-wqe.h"
+#include "cvmx-tim.h"
 
 typedef struct ewx_thread ewx_thread_t;
 typedef void (*ewx_thread_fn)(ewx_thread_t *, void *);
@@ -15,7 +16,10 @@ struct ewx_thread {
 	uint32_t magic;				/**< magic number，以防止意外的work进入 */
 	uint16_t free;				/**< 释放当前work的标志 */
 	uint16_t tick;				/**< timer的时候使用，单位为毫秒 */
-	ewx_thread_fn fn;				/**< 回调函数 */
+    cvmx_tim_delete_t delete_info;
+    ewx_thread_fn fn;		    /**< 回调函数 */
+    uint16_t ignore;
+    uint8_t  res[6];
 	void *param;				/**< 回调的参数 */
 };
 
@@ -51,8 +55,10 @@ int32_t ewx_thread_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t q
  *
  * @return 0，成功；否则，返回错误码
  */
-int32_t ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn,
+cvmx_wqe_t * ewx_timer_create(uint32_t tag, cvmx_pow_tag_type_t tag_type, uint64_t qos, uint64_t grp, ewx_thread_fn fn,
 								void *param, uint32_t param_len, uint16_t delay);
+
+int ewx_timer_drop(cvmx_wqe_t *wqe_t);
 
 /**
  * 线程处理函数，在主流程work处理函数中被调用

@@ -1,21 +1,21 @@
 ######################*license start*###################################
 # OCTEON SDK
-# 
+#
 # Copyright (c) 2003-2005 Cavium Networks. All rights reserved.
-# 
+#
 # This file, which is part of the OCTEON SDK from Cavium Networks,
 # contains proprietary and confidential information of Cavium Networks and
 # its suppliers.
-# 
+#
 # Any licensed reproduction, distribution, modification, or other use of
 # this file or the confidential information or patented inventions
 # embodied in this file is subject to your license agreement with Cavium
 # Networks. Unless you and Cavium Networks have agreed otherwise in
 # writing, the applicable license terms can be found at:
 # licenses/cavium-license-type2.txt
-# 
+#
 # All other use and disclosure is prohibited.
-# 
+#
 # Contact Cavium Networks at info@caviumnetworks.com for more information.
 #####################*license end*#####################################/
 
@@ -35,7 +35,11 @@ OBJ_DIR:=$(TOP)/obj
 
 .PHONY: doc libewx
 #  standard common Makefile fragment
-all: $(OBJ_DIR) libewx 
+all: $(OBJ_DIR) libewx
+
+nocheck:
+	touch ewx_board_check.c
+	$(MAKE) mode=nocheck
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
@@ -46,7 +50,11 @@ dir := $(TOP)
 include $(dir)/lib_ewx.mk
 
 CFLAGS_GLOBAL +=
-CFLAGS_LOCAL = -g -O2 -W -Wall  -Wno-unused-parameter  
+ifeq ($(mode), nocheck)
+CFLAGS_LOCAL = -g -O2 -W -Wall -Wno-unused-parameter -DCHECK_ENABLE=0
+else
+CFLAGS_LOCAL = -g -O2 -W -Wall -Wno-unused-parameter
+endif
 
 libewx: ${OBJ_DIR}/libewx.a
 	@mkdir -p lib_ewx
